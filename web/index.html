@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>深海采集站 · 故障闭环审计</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>故障闭环审计台</h1>
+  <p class="subtitle">
+    深海采集站的失效动作可能不产生回执。本台精确判定：是否存在一条<b>已发生故障的无限执行</b>与一条
+    <b>从未发生故障的无限执行</b>，其可观察回执序列完全相同（即故障可能被一条始终正常的执行无限期伪装）。
+  </p>
+</header>
+
+<main>
+  <section class="card" id="spec-section">
+    <h2>规程录入</h2>
+
+    <label class="field">
+      <span>有限位置集 <small>（空格 / 逗号 / 换行分隔；重复录入自动合并）</small></span>
+      <textarea id="positions" rows="2" spellcheck="false"
+        placeholder="例如：蓄压舱 回流舱 弃置舱"></textarea>
+    </label>
+
+    <label class="field">
+      <span>初始位置</span>
+      <input id="initial" type="text" spellcheck="false" placeholder="须属于位置集">
+    </label>
+
+    <h3>迁移 <small>（标识唯一；每条迁移标为故障或正常，并填写 ASCII 回执或勾选静默）</small></h3>
+    <table id="migrations">
+      <thead>
+        <tr>
+          <th>#</th><th>标识</th><th>源位置</th><th>目标位置</th>
+          <th>性质</th><th>ASCII 回执</th><th>静默</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="toolbar">
+      <button type="button" id="add-migration">＋ 添加迁移</button>
+      <button type="button" id="load-silent-loop">载入示例：静默双环</button>
+      <button type="button" id="load-diagnosable">载入示例：可诊断回执</button>
+      <button type="button" id="clear-all">清空</button>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="submit" class="primary">提交诊断</button>
+      <button type="button" id="cancel" disabled>取消计算</button>
+      <span id="status" role="status" aria-live="polite"></span>
+    </div>
+
+    <ul id="errors" class="errors" aria-live="polite"></ul>
+    <ul id="warnings" class="warnings"></ul>
+  </section>
+
+  <section class="card" id="result-section">
+    <h2>审计结论 <span id="stale-badge" class="badge stale" hidden>规程已修改，结论可能已过期</span></h2>
+    <div id="conclusion"><p class="muted">尚未提交诊断。</p></div>
+  </section>
+
+  <section class="card" id="help">
+    <h2>判定语义与裁决说明</h2>
+    <ul>
+      <li><b>回执序列</b>：执行依次经过的非静默迁移的回执所构成的序列；两个序列“完全相同”指<b>逐项相等</b>（不做字符拼接比较）。静默迁移不产生回执。</li>
+      <li><b>精确判定</b>：在双厂验证器（twin plant）图上判定——存在“已发生故障的无限执行”与“从未发生故障的无限执行”回执序列相同，当且仅当某个旗标为一故障一正常的可达诊断对位于一条<b>两侧均可推进的闭环</b>上。该条件充分必要，非有限回放、非仅比较位置名称。</li>
+      <li><b>裁决顺序（稳定）</b>：共同前缀回执数 → 前缀步数 → 前缀迁移标识序列字典序 → 闭环回执数 → 闭环步数 → 闭环迁移标识序列字典序。同一规程多次提交结论一致。</li>
+      <li><b>异步与过期任务</b>：计算在 Web Worker 中执行。计算期间修改规程或点击“取消计算”会使在途任务过期；过期任务一律不得改写当前草稿与结果。</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <span>深海采集站 · 故障闭环审计页</span>
+</footer>
+
+<script src="diagnoser.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

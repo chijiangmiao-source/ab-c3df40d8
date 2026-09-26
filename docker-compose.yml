@@ -1,0 +1,30 @@
+# 端口可调：APP_PORT=9000 docker compose up app
+services:
+  app:
+    build: .
+    image: abyss-fault-loop-audit:latest
+    environment:
+      PORT: ${APP_PORT:-8080}
+    ports:
+      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # 核对服务：代码测试（静默双环 / 可诊断回执）+ 构建检查 + 页面 HTTP 冒烟，
+  # 执行完毕后退出并以退出码报告结果：
+  #   docker compose up --exit-code-from verify verify
+  verify:
+    image: abyss-fault-loop-audit:latest
+    build: .
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      SMOKE_BASE_URL: http://app:${APP_PORT:-8080}
+    command: ["node", "scripts/verify.js"]
+    restart: "no"
